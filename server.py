@@ -66,9 +66,8 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             business_name TEXT,
             url TEXT UNIQUE NOT NULL,
+            sector TEXT,
             category TEXT,
-            city TEXT,
-            state TEXT,
             source TEXT,
             date_added TEXT,
             notes TEXT
@@ -100,15 +99,14 @@ def add_site():
     try:
         conn.execute(
             """
-            INSERT INTO sites (business_name, url, category, city, state, source, date_added, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO sites (business_name, url, sector, category, source, date_added, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 data.get("business_name", ""),
                 url,
+                data.get("sector", ""),
                 data.get("category", ""),
-                data.get("city", ""),
-                data.get("state", ""),
                 "extension",
                 date.today().isoformat(),
                 data.get("notes", ""),

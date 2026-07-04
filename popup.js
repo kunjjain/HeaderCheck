@@ -124,8 +124,6 @@ function extractMetadata() {
     getMeta('meta[name="application-name"]') ||
     null;
 
-  let city = null;
-  let state = null;
   let category = null;
 
   const scripts = document.querySelectorAll('script[type="application/ld+json"]');
@@ -136,11 +134,6 @@ function extractMetadata() {
       for (const item of items) {
         if (!businessName && item.name) businessName = item.name;
         if (!category && item["@type"]) category = item["@type"];
-        const addr = item.address;
-        if (addr) {
-          city = city || addr.addressLocality || null;
-          state = state || addr.addressRegion || null;
-        }
       }
     } catch (e) {
       // not valid JSON-LD, skip
@@ -151,7 +144,41 @@ function extractMetadata() {
     businessName = document.title.split(/[-|\u2013]/)[0].trim();
   }
 
-  return { businessName, city, state, category };
+  // Best-effort sector guess via keyword matching against page text.
+  // This is heuristic, not authoritative - it's meant to save typing for
+  // the obvious cases, not to be trusted blindly.
+  const SECTOR_KEYWORDS = {
+    "Healthcare": ["hospital", "clinic", "doctor", "pharmacy", "dental", "diagnostic", "healthcare", "medical"],
+    "Retail": ["shop", "store", "retail", "boutique", "mart", "supermarket", "grocery"],
+    "Hospitality/Food": ["restaurant", "cafe", "hotel", "resort", "catering", "bakery", "dining", "food"],
+    "Education": ["school", "college", "institute", "academy", "coaching", "university", "education", "tuition"],
+    "Finance": ["bank", "finance", "insurance", "loan", "investment", "accounting", "chartered accountant", "tax"],
+    "IT/Technology": ["software", "technology", "it services", "web design", "app development", "saas", "tech solutions"],
+    "Real Estate": ["real estate", "property", "builder", "realty", "construction", "developers"],
+    "Beauty/Wellness": ["salon", "spa", "wellness", "gym", "fitness", "yoga", "beauty parlour"],
+    "Automotive": ["automobile", "car dealer", "auto parts", "garage", "car service", "showroom"],
+    "Legal": ["law firm", "advocate", "legal services", "attorney"],
+    "Manufacturing": ["manufacturer", "manufacturing", "factory", "industries", "exporter"],
+    "Professional Services": ["consultancy", "consulting", "agency", "services pvt", "solutions"],
+  };
+
+  const haystack = [
+    document.title || "",
+    getMeta('meta[name="description"]') || "",
+    getMeta('meta[name="keywords"]') || "",
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  let sector = null;
+  for (const [name, keywords] of Object.entries(SECTOR_KEYWORDS)) {
+    if (keywords.some((kw) => haystack.includes(kw))) {
+      sector = name;
+      break;
+    }
+  }
+
+  return { businessName, category, sector };
 }
 
 // ---- Main ------------------------------------------------------------
@@ -167,8 +194,7 @@ async function init() {
     });
     if (result) {
       if (result.businessName) document.getElementById("business-name").value = result.businessName;
-      if (result.city) document.getElementById("city").value = result.city;
-      if (result.state) document.getElementById("state").value = result.state;
+      if (result.sector) document.getElementById("sector").value = result.sector;
       if (result.category) document.getElementById("category").value = result.category;
     }
   } catch (e) {
@@ -260,9 +286,8 @@ async function addToDataset(url) {
   const payload = {
     url,
     business_name: document.getElementById("business-name").value,
+    sector: document.getElementById("sector").value,
     category: document.getElementById("category").value,
-    city: document.getElementById("city").value,
-    state: document.getElementById("state").value,
     notes: document.getElementById("notes").value,
   };
 

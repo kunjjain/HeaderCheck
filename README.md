@@ -12,9 +12,10 @@ pip install flask flask-cors --break-system-packages
 Edit `server.py` and set `DB_PATH` to your actual dataset `.db` file
 (so it writes into the same table you're already building, not a new one).
 If your existing table has a different name/columns than `sites`
-(business_name, url, category, city, state, source, date_added, notes),
+(business_name, url, sector, category, source, date_added, notes),
 either rename the table in your DB to `sites` or edit the SQL in
-`init_db()` / `add_site()` to match your real schema.
+`init_db()` / `add_site()` to match your real schema. (City/state aren't
+tracked, since the sample is pan-India rather than region-stratified.)
 
 Run it:
 ```bash
@@ -34,12 +35,15 @@ it on `localhost:5000`.
 
 1. Visit any SME site
 2. Click the extension icon
-3. You'll see pass/fail on the 6 headers and a 0–1 score with A–F tier
-   (equal-weighted by default — edit the `weight` values in `popup.js` if
-   your paper uses a different weighting)
-4. If it's a site you want in your dataset, fill in business name /
-   category / city / state / notes and click "Add to dataset" — it checks
-   for duplicates first via the URL UNIQUE constraint
+3. You'll see pass/fail/weak on the 6 headers and a 0–1 quality-graded
+   score with A–F tier
+4. Business name, sector, and category are best-effort auto-filled from
+   page metadata (structured data if present, otherwise keyword matching
+   on the title/meta description) — all fields stay editable, so correct
+   anything wrong before saving. Many small sites won't have enough
+   metadata to auto-fill cleanly; that's expected, just fill in manually
+5. If it's a site you want in your dataset, click "Add to dataset" — it
+   checks for duplicates first via the URL UNIQUE constraint
 
 ## Scoring methodology
 
