@@ -20,6 +20,13 @@ Severity-tiered weights, sum to 1.0:
     Referrer-Policy              0.15
     Permissions-Policy           0.15
     X-Content-Type-Options       0.10
+
+Quality-graded credit per header (not just presence):
+    pass (well-configured)       full weight    x1.0
+    weak (present, misconfigured) half weight   x0.5
+    fail (absent)                 no weight     x0.0
+
+score = sum(weight_i * credit_i) for i in the 6 headers
 Tiers: A >= 0.90, B >= 0.75, C >= 0.60, D >= 0.40, F < 0.40
 """
 HEADER_WEIGHTS = {
@@ -30,6 +37,7 @@ HEADER_WEIGHTS = {
     "permissions-policy": 0.15,
     "x-content-type-options": 0.10,
 }
+QUALITY_CREDIT = {"pass": 1.0, "weak": 0.5, "fail": 0.0}
 
 
 import sqlite3

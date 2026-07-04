@@ -189,12 +189,16 @@ async function init() {
     let weightedScore = 0;
     let presentCount = 0;
 
+    // Quality-graded credit: a header contributes its full weight only if
+    // well-configured. "weak" (present but misconfigured, e.g. CSP with
+    // unsafe-inline) earns half credit rather than full credit - this is
+    // what makes the score reflect actual effectiveness, not just presence.
+    const CREDIT = { pass: 1.0, weak: 0.5, fail: 0.0 };
+
     REQUIRED_HEADERS.forEach((h) => {
       const result = h.check(headers);
-      if (result.status !== "fail") {
-        weightedScore += h.weight; // weak still counts as "present" for this presence-based score
-        presentCount++;
-      }
+      weightedScore += h.weight * CREDIT[result.status];
+      if (result.status !== "fail") presentCount++;
 
       const li = document.createElement("li");
       li.className = result.status; // "pass" | "weak" | "fail"
